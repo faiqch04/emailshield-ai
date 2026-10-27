@@ -1,0 +1,14 @@
+{
+    "project": "Email Phishing Detector",
+    "architecture": "Bidirectional LSTM",
+    "max_words": 20000,
+    "max_len": 250,
+    "padding": "post",
+    "truncating": "post",
+    "labels": {
+        "0": "Safe Email",
+        "1": "Phishing Email"
+    },
+    "threshold": 0.5,
+    "test_accuracy": 0.982316
+}
