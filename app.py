@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,7 +26,7 @@ lowercase = tokenizer_data["lower"]
 model = tf.saved_model.load(os.path.join(BASE_DIR, "model"))
 predict_fn = model.signatures["serve"]
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 CORS(app)
 
 
@@ -56,11 +56,7 @@ def prepare_email(text):
 
 @app.get("/")
 def home():
-    return jsonify({
-        "project": "EmailShield AI",
-        "status": "running",
-        "model": "Bidirectional LSTM"
-    })
+    return render_template("index.html")
 
 
 @app.get("/health")
@@ -77,7 +73,9 @@ def predict():
         return jsonify({"error": "Please provide an email to analyze."}), 400
 
     if len(email_text) > 20000:
-        return jsonify({"error": "Email text must be 20,000 characters or fewer."}), 400
+        return jsonify({
+            "error": "Email text must be 20,000 characters or fewer."
+        }), 400
 
     input_tensor = tf.constant(prepare_email(email_text))
     result = predict_fn(input_layer=input_tensor)

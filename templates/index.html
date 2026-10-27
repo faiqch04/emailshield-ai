@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmailShield AI | Phishing Email Detector</title>
+<style>
+:root{color-scheme:dark;--bg:#080b12;--panel:#101725;--cyan:#00e5ff;--purple:#9b6dff;--muted:#9aa9bd}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 15% 0%,#10263b 0,transparent 45%),radial-gradient(ellipse at 90% 15%,#21163d 0,transparent 35%),var(--bg);color:#f4f7ff;font:16px Arial,sans-serif;min-height:100vh}
+header{max-width:1050px;margin:auto;padding:28px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-weight:800;font-size:21px;letter-spacing:.4px}.brand span{color:var(--cyan)}
+.pill{font-size:11px;color:var(--cyan);border:1px solid #245269;padding:8px 12px;border-radius:30px;letter-spacing:1px}
+main{max-width:850px;margin:55px auto;padding:0 22px 50px}
+.eyebrow{color:var(--cyan);font-size:12px;letter-spacing:3px;font-weight:bold}
+h1{font-size:clamp(42px,7vw,68px);line-height:1.04;letter-spacing:-2px;margin:20px 0}
+h1 span{background:linear-gradient(90deg,var(--cyan),var(--purple));background-clip:text;color:transparent}
+.intro{color:var(--muted);line-height:1.8;max-width:640px}
+.panel{margin-top:34px;background:linear-gradient(145deg,#121c2b,#0c111d);border:1px solid #26374a;border-radius:22px;padding:25px;box-shadow:0 20px 70px #0005}
+label{display:block;font-weight:bold;margin-bottom:12px}
+textarea{width:100%;min-height:200px;resize:vertical;background:#090f19;color:#eef5ff;border:1px solid #2c4056;border-radius:13px;padding:17px;font:15px/1.7 Arial,sans-serif;outline:none}
+textarea:focus{border-color:var(--cyan)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+button{cursor:pointer;border-radius:11px;padding:14px 20px;font-weight:bold;font-size:14px}
+.primary{border:0;background:linear-gradient(100deg,var(--cyan),#9a85ff);color:#06101a;flex:1}
+.secondary{background:transparent;border:1px solid #33445b;color:#dce6f5}
+button:disabled{opacity:.6;cursor:wait}
+.result{display:none;margin-top:22px;border:1px solid #34465d;border-radius:15px;padding:20px}
+.result.safe{border-color:#167e68;background:#0b241f}
+.result.phishing{border-color:#9a4355;background:#2b121b}
+.result.error{border-color:#9a7040;background:#271d10}
+.result h2{font-size:22px;margin:0 0 10px}
+.result p{line-height:1.6;overflow-wrap:anywhere}
+.meter{height:8px;background:#293548;border-radius:10px;overflow:hidden;margin:14px 0}
+.meter div{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--purple));transition:width .3s}
+.small{font-size:12px;color:var(--muted);line-height:1.7}
+footer{text-align:center;color:#708198;font-size:12px;padding:25px;border-top:1px solid #1b2636}
+.links{display:flex;gap:18px;flex-wrap:wrap;margin-top:20px}
+a{color:var(--cyan);text-decoration:none}
+@media(max-width:520px){main{margin-top:30px}.panel{padding:17px}header{padding:20px 16px}h1{letter-spacing:-1px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">◈ EMAILSHIELD <span>AI</span></div>
+  <div class="pill">DEEP LEARNING · BiLSTM</div>
+</header>
+<main>
+  <div class="eyebrow">AI-POWERED EMAIL ANALYSIS</div>
+  <h1>Think before<br><span>you click.</span></h1>
+  <p class="intro">Analyze suspicious email text using a trained Bidirectional LSTM deep learning model. Get a prediction to help you make a more informed decision.</p>
+
+  <section class="panel">
+    <label for="email">Email message</label>
+    <textarea id="email" maxlength="20000" placeholder="Paste the email text you want to analyze..."></textarea>
+    <div class="actions">
+      <button class="primary" id="analyze">Analyze email ↗</button>
+      <button class="secondary" id="clear">Clear</button>
+    </div>
+    <div class="result" id="result" aria-live="polite">
+      <h2 id="heading"></h2>
+      <p id="description"></p>
+      <div class="meter"><div id="bar"></div></div>
+      <p id="probability"></p>
+      <p class="small" id="note"></p>
+    </div>
+    <p class="small">Privacy tip: don't paste passwords, confidential information, or sensitive personal data.</p>
+  </section>
+
+  <section class="links">
+    <a href="https://github.com/faiqch04/emailshield-ai" target="_blank" rel="noopener">GitHub source ↗</a>
+    <a href="https://huggingface.co/datasets/zefang-liu/phishing-email-dataset" target="_blank" rel="noopener">Dataset ↗</a>
+    <a href="https://huggingface.co/spaces/faiqchaudhary/email-phishing-detector" target="_blank" rel="noopener">Previous demo ↗</a>
+  </section>
+  <p class="small">Test-set accuracy: 98.23% on the project's held-out test split. This does not guarantee the accuracy of an individual prediction.</p>
+</main>
+<footer>EmailShield AI · Educational cybersecurity project · AI predictions are not security guarantees.</footer>
+<script>
+const emailInput = document.getElementById("email");
+const button = document.getElementById("analyze");
+const result = document.getElementById("result");
+
+button.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+  if (!email) {
+    result.className = "result error";
+    result.style.display = "block";
+    document.getElementById("heading").textContent = "Enter an email first";
+    document.getElementById("description").textContent = "Paste email text into the box above.";
+    document.getElementById("probability").textContent = "";
+    document.getElementById("note").textContent = "";
+    document.getElementById("bar").style.width = "0";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Analyzing…";
+  result.style.display = "none";
+
+  try {
+    const response = await fetch("/predict", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({email})
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Prediction request failed.");
+
+    const phishing = data.prediction === "Phishing Email";
+    const probability = Number(data.phishing_probability);
+    if (!Number.isFinite(probability) || probability < 0 || probability > 100) {
+      throw new Error("The API returned an invalid probability.");
+    }
+
+    result.className = "result " + (phishing ? "phishing" : "safe");
+    document.getElementById("heading").textContent =
+      phishing ? "⚠ Phishing Email" : "✓ Safe Email";
+    document.getElementById("description").textContent =
+      phishing
+        ? "The model identified patterns associated with phishing."
+        : "The model classified this message as safe. This does not guarantee the email is trustworthy.";
+    document.getElementById("probability").textContent =
+      "Model-reported phishing probability: " + probability.toFixed(2) + "%";
+    document.getElementById("bar").style.width = probability + "%";
+    document.getElementById("note").textContent =
+      (data.model || "Bidirectional LSTM") + " · " +
+      (data.note || "Verify suspicious messages independently.");
+    result.style.display = "block";
+  } catch (error) {
+    result.className = "result error";
+    document.getElementById("heading").textContent = "Unable to analyze";
+    document.getElementById("description").textContent = error.message;
+    document.getElementById("probability").textContent = "";
+    document.getElementById("note").textContent = "Please try again shortly.";
+    document.getElementById("bar").style.width = "0";
+    result.style.display = "block";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Analyze email ↗";
+  }
+});
+
+document.getElementById("clear").addEventListener("click", () => {
+  emailInput.value = "";
+  result.style.display = "none";
+  emailInput.focus();
+});
+</script>
+</body>
+</html>
